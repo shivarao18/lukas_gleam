@@ -1,20 +1,22 @@
 import argv
 import gleam/int
 import gleam/io
+import solver
 
-
+// Main entry point for the program
+// Expects two command line arguments: N (upper limit) and k (sequence length)
 pub fn main() -> Nil {
-  // Assert that the result is Ok and extract the values.
-  // If parse_arguments() returns an Error, the program will crash.
-  let assert Ok(#(n, k)) = parse_arguments()
-
-  // Now, n and k are available in this scope, outside the case statement.
-  io.println("Searching for sequences of length " <> int.to_string(k) 
-              <> " with starting points from 1 to " <> int.to_string(n))
-  
-  run_algorithm(n, k)
+  case parse_arguments() {
+    Ok(#(n, k)) -> {
+      // Run the sequential algorithm and print results
+      solver.solve_and_print(n, k)
+    }
+    Error(message) -> {
+      io.println("Error: " <> message)
+      print_usage()
+    }
+  }
 }
-
 
 // Parse command line arguments and validate them
 // Returns Result with tuple (N, k) on success, or error message on failure
@@ -42,14 +44,27 @@ fn validate_parameters(n: Int, k: Int) -> Result(#(Int, Int), String) {
   case n > 0, k >= 2 {
     True, True -> Ok(#(n, k))
     False, _ -> Error("N must be positive (N > 0)")
-    _, False -> Error("k must be at least 2 (need at least 2 consecutive numbers)")
+    _, False ->
+      Error("k must be at least 2 (need at least 2 consecutive numbers)")
   }
 }
 
-// Placeholder for the main algorithm - will be implemented in Step 1.2
-fn run_algorithm(n: Int, k: Int) -> Nil {
-  io.println("Algorithm implementation coming in Step 1.2...")
-  io.println("Will search for solutions where sum of " <> int.to_string(k) 
-             <> " consecutive squares starting from 1 to " <> int.to_string(n)
-             <> " equals a perfect square.")
+// Print usage instructions when arguments are invalid
+fn print_usage() -> Nil {
+  io.println("")
+  io.println("Usage: lukas N k")
+  io.println("")
+  io.println("  N: Upper limit for starting points (positive integer)")
+  io.println("  k: Length of consecutive sequence (integer >= 2)")
+  io.println("")
+  io.println("Examples:")
+  io.println("  lukas 3 2     # Find sequences of length 2 with start <= 3")
+  io.println("  lukas 40 24   # Find sequences of length 24 with start <= 40")
+  io.println("")
+  io.println(
+    "The program finds all k consecutive numbers starting at some point",
+  )
+  io.println(
+    "between 1 and N, such that the sum of their squares is a perfect square.",
+  )
 }

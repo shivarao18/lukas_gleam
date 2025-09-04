@@ -1,5 +1,6 @@
 name = "project_1"
 version = "1.0.0"
+main = "project_1"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
 # your project to the Hex package manager.

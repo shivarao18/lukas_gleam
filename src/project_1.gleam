@@ -1,20 +1,66 @@
 import argv
+import boss_actor
+import gleam/erlang/process
 import gleam/int
 import gleam/io
-import solver
+import gleam/list
+import gleam/otp/actor
+
+// import solver
+import worker_actor
 
 // Main entry point for the program
 // Expects two command line arguments: N (upper limit) and k (sequence length)
 pub fn main() -> Nil {
+  // case parse_arguments() {
+  //   Ok(#(n, k)) -> {
+  //     // Run the sequential algorithm and print results
+  //     solver.solve_and_print(n, k)
+  //   }
+  //   Error(message) -> {
+  //     io.println("Error: " <> message)
+  //     print_usage()
+  //   }
+  // }
   case parse_arguments() {
     Ok(#(n, k)) -> {
-      // Run the sequential algorithm and print results
-      solver.solve_and_print(n, k)
+      // Start boss with state (workers count will be set later)
+      let chunk_size = 100
+      let num_workers = { n + chunk_size - 1 } / chunk_size
+      io.println("Number of workers: " <> int.to_string(num_workers))
+      let client_subject = process.new_subject()
+
+      let state =
+        boss_actor.State(
+          remaining: num_workers,
+          results: [],
+          client: client_subject,
+        )
+
+      let assert Ok(boss) =
+        actor.new(state)
+        |> actor.on_message(boss_actor.handle_message)
+        |> actor.start
+
+      let boss_subject = boss.data
+
+      // Spawn workers
+      list.range(0, num_workers - 1)
+      |> list.each(fn(i) {
+        let start = i * chunk_size + 1
+        let stop = int.min({ i + 1 } * chunk_size, n)
+        let assert Ok(w) =
+          actor.new(Nil)
+          |> actor.on_message(worker_actor.handle_message)
+          |> actor.start
+        process.send(w.data, worker_actor.Work(start, stop, k, boss_subject))
+      })
+
+      // Wait for results
+      let assert Ok(results) = process.receive(client_subject, 5000)
+      results |> list.each(fn(r) { io.println(int.to_string(r)) })
     }
-    Error(message) -> {
-      io.println("Error: " <> message)
-      print_usage()
-    }
+    _ -> print_usage()
   }
 }
 

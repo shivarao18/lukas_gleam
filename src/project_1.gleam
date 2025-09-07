@@ -7,15 +7,15 @@ import gleam/list
 import worker
 
 // Configuration
-const num_workers = 50
+const num_workers = 60
 
 pub fn main() {
-  io.println("--- Lukas Solver (supervised) ---")
+  io.println("--- Lukas Solver ---")
   case parse_arguments() {
     Ok(#(n, k)) -> {
       let reply = process.new_subject()
 
-      let chunk_size = int.max(1, n / { num_workers * 4 })
+      let chunk_size = int.max(1, n / { num_workers * 12 })
       //io.println("Chunk size: " <> int.to_string(chunk_size))
 
       // Start boss actor and get its subject
